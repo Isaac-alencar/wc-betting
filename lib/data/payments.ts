@@ -26,7 +26,7 @@ export async function getPendingPayments(): Promise<
     .select("*, user_profiles(display_name), phases(name)")
     .eq("status", "pending")
     .order("created_at", { ascending: true });
-  return (data ?? []) as (Payment & {
+  return (data ?? []) as unknown as (Payment & {
     user_profiles: { display_name: string } | null;
     phases: { name: string };
   })[];
