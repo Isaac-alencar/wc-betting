@@ -1,0 +1,215 @@
+sistema: "Bolão Brasileiro"
+
+objetivo:
+  descricao: >
+    Competição entre participantes que fazem palpites sobre resultados
+    de eventos esportivos (geralmente futebol) acumulando pontos conforme
+    a precisão dos acertos.
+  vencedor:
+    criterio_padrao:
+      - maior_pontuacao_total
+      - desempate_por_acertos_exatos
+      - desempate_por_maior_numero_de_vitorias_de_rodada
+      - sorteio_final_opcional
+
+entidades:
+  usuario:
+    atributos:
+      - id
+      - nome
+      - email_opcional
+      - ativo:boolean
+
+  campeonato:
+    atributos:
+      - id
+      - nome
+      - temporada
+      - status: [nao_iniciado, em_andamento, encerrado]
+
+  rodada:
+    atributos:
+      - id
+      - numero
+      - data_inicio
+      - data_fim
+
+  partida:
+    atributos:
+      - id
+      - mandante
+      - visitante
+      - data_hora
+      - gols_mandante_final
+      - gols_visitante_final
+      - status:
+          - agendada
+          - encerrada
+          - cancelada
+          - adiada
+
+  palpite:
+    atributos:
+      - id
+      - usuario_id
+      - partida_id
+      - gols_mandante_previsto
+      - gols_visitante_previsto
+      - criado_em
+      - editavel:boolean
+
+regras_de_palpite:
+  prazo:
+    descricao: >
+      Usuário pode cadastrar ou editar palpites até o horário oficial
+      de início da partida.
+    bloqueio_automatico: true
+
+  formato:
+    obrigatorio:
+      - gols_mandante_previsto >= 0
+      - gols_visitante_previsto >= 0
+      - inteiros_apenas: true
+
+  ausencia_de_palpite:
+    comportamento:
+      - pontuacao_zero
+      - opcionalmente_gerar_palpite_padrao
+
+pontuacao:
+  sistema_padrao:
+    acerto_placar_exato:
+      pontos: 5
+      condicao: >
+        gols_previstos_mandante == gols_reais_mandante AND
+        gols_previstos_visitante == gols_reais_visitante
+
+    acerto_resultado:
+      pontos: 3
+      condicao: >
+        acertou_vencedor_ou_empate_sem_placar_exato
+
+    acerto_parcial:
+      pontos: 1
+      condicao: >
+        acertou_gols_de_um_dos_times
+
+    erro_total:
+      pontos: 0
+
+  observacoes:
+    - "Placar exato prevalece sobre demais regras."
+    - "Pontuação não é cumulativa salvo configuração explícita."
+
+logica_resultado:
+  derivacao:
+    vencedor_real:
+      regras:
+        - mandante_se gols_mandante_final > gols_visitante_final
+        - visitante_se gols_visitante_final > gols_mandante_final
+        - empate_se iguais
+
+    vencedor_previsto:
+      regras:
+        - mandante_se gols_mandante_previsto > gols_visitante_previsto
+        - visitante_se gols_visitante_previsto > gols_mandante_previsto
+        - empate_se iguais
+
+ranking:
+  calculo:
+    pontos_totais: soma_de_todos_os_pontos
+    acertos_exatos: contagem_de_placares_exatos
+    aproveitamento:
+      formula: >
+        pontos_obtidos / pontos_maximos
+
+  ordenacao:
+    - pontos_totais desc
+    - acertos_exatos desc
+    - data_primeiro_palpite asc
+
+funcionalidades_comuns:
+  - ranking_geral
+  - ranking_por_rodada
+  - historico_de_palpites
+  - notificacoes_pre_jogo
+  - premios_financeiros_opcionais
+  - ligas_privadas
+  - convite_por_link
+  - estatisticas_de_acerto
+
+regras_financeiras_opcionais:
+  entrada:
+    valor_fixo_por_usuario: true
+
+  premiacao:
+    modelos:
+      - vencedor_leva_tudo
+      - top_3_dividem
+      - premio_por_rodada
+
+  controle:
+    - registrar_pagamento
+    - impedir_premiacao_sem_confirmacao
+
+casos_especiais:
+  partida_cancelada:
+    comportamento:
+      - ignorar_palpites
+      - remover_pontos_relacionados
+
+  partida_adiada:
+    comportamento:
+      - manter_palpites
+      - permitir_edicao_ate_novo_horario
+
+  wo:
+    comportamento:
+      - usar_resultado_oficial
+
+api_design_sugerido:
+  endpoints:
+    - POST /usuarios
+    - POST /campeonatos
+    - POST /partidas
+    - POST /palpites
+    - GET /ranking
+    - GET /rodadas/{id}
+    - GET /usuarios/{id}/estatisticas
+
+eventos_importantes:
+  - partida_iniciada
+  - partida_encerrada
+  - ranking_atualizado
+  - rodada_encerrada
+  - campeonato_encerrado
+
+validacoes_criticas:
+  - impedir_palpite_duplicado_por_usuario_e_partida
+  - impedir_edicao_apos_inicio_da_partida
+  - recalcular_ranking_apos_resultado_oficial
+  - garantir_integridade_transacional_da_pontuacao
+
+modelo_de_execucao_recomendado:
+  fluxo:
+    - importar_partidas
+    - abrir_janela_de_palpites
+    - bloquear_palpite_no_inicio
+    - receber_resultado_oficial
+    - calcular_pontos
+    - atualizar_ranking
+    - divulgar_resultados
+
+variacoes_populares:
+  - mata_mata_com_bonus
+  - multiplicador_em_classicos
+  - pontos_por_aposta_em_artilheiro
+  - bolao_de_cartoes_ou_escanteios
+  - sistema_estilo_cartola_com_palpites
+
+objetivo_tecnico:
+  prioridade:
+    - simplicidade_de_calculo
+    - auditabilidade
+    - imutabilidade_de_resultados
+    - escalabilidade_para_multiplos_campeonatos
