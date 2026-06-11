@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 import RankingTable from "@/components/ranking-table";
-import Link from "next/link";
 
 export const revalidate = 60;
 
@@ -90,17 +89,9 @@ export default async function RankingPage() {
   return (
     <main className="min-h-screen bg-[var(--background)] px-4 py-10">
       <div className="mx-auto max-w-lg">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-black text-[var(--accent)]">Ranking</h1>
-            <p className="text-sm text-[var(--muted)]">Copa do Mundo 2026 · Brasil</p>
-          </div>
-          <Link
-            href="/"
-            className="text-sm text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
-          >
-            ← Início
-          </Link>
+        <div className="mb-6">
+          <h1 className="text-2xl font-black text-[var(--accent)]">Ranking</h1>
+          <p className="text-sm text-[var(--muted)]">Copa do Mundo 2026 · Brasil</p>
         </div>
 
         {totalPot > 0 && (

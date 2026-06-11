@@ -34,38 +34,13 @@ export default async function HomePage() {
     <main className="min-h-screen bg-[var(--background)] px-4 py-10">
       <div className="mx-auto max-w-6xl">
         {/* Header */}
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-black text-[var(--accent)]">
-              BOLÃO DOS ALENCAR
-            </h1>
-            <p className="text-sm text-[var(--muted)]">
-              Copa do Mundo 2026 · Fase de Grupos
-            </p>
-          </div>
-          <nav className="flex gap-4 text-sm text-[var(--muted)]">
-            <Link
-              href="/ranking"
-              className="hover:text-[var(--foreground)] transition-colors"
-            >
-              Ranking
-            </Link>
-            {user ? (
-              <Link
-                href="/apostas"
-                className="hover:text-[var(--foreground)] transition-colors"
-              >
-                Palpites
-              </Link>
-            ) : (
-              <Link
-                href="/login"
-                className="hover:text-[var(--foreground)] transition-colors"
-              >
-                Entrar
-              </Link>
-            )}
-          </nav>
+        <div className="mb-6">
+          <h1 className="text-2xl font-black text-[var(--accent)]">
+            BOLÃO DOS ALENCAR
+          </h1>
+          <p className="text-sm text-[var(--muted)]">
+            Copa do Mundo 2026 · Fase de Grupos
+          </p>
         </div>
 
         {/* State-based CTA */}
