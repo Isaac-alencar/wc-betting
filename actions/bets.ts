@@ -3,7 +3,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
-export async function submitBets(formData: FormData) {
+export async function submitBets(
+  _prevState: { error: string } | null,
+  formData: FormData
+) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -59,7 +62,7 @@ export async function submitBets(formData: FormData) {
     const away = Number(awayRaw);
 
     if (homeRaw === null || homeRaw === "" || awayRaw === null || awayRaw === "") {
-      return { error: "Preencha o placar de todas as partidas." };
+      continue;
     }
     if (!Number.isInteger(home) || home < 0 || !Number.isInteger(away) || away < 0) {
       return { error: "Placar inválido. Use números inteiros ≥ 0." };
@@ -72,6 +75,10 @@ export async function submitBets(formData: FormData) {
       away_goals_predicted: away,
       status: "pending",
     });
+  }
+
+  if (betsToUpsert.length === 0) {
+    return { error: "Preencha pelo menos um placar antes de enviar." };
   }
 
   const { error: upsertError } = await supabase

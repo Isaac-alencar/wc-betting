@@ -39,7 +39,6 @@ export default function BetInput({ match, existingBet }: BetInputProps) {
             min={0}
             step={1}
             defaultValue={existingBet?.home_goals_predicted ?? ""}
-            required
             className="w-16 rounded-lg border border-[var(--border)] bg-[var(--surface-raised)] px-2 py-2 text-center text-xl font-bold text-[var(--foreground)] outline-none focus:border-[var(--accent)] transition-colors"
             placeholder="0"
           />
@@ -59,7 +58,6 @@ export default function BetInput({ match, existingBet }: BetInputProps) {
             min={0}
             step={1}
             defaultValue={existingBet?.away_goals_predicted ?? ""}
-            required
             className="w-16 rounded-lg border border-[var(--border)] bg-[var(--surface-raised)] px-2 py-2 text-center text-xl font-bold text-[var(--foreground)] outline-none focus:border-[var(--accent)] transition-colors"
             placeholder="0"
           />

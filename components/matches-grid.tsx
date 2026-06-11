@@ -48,7 +48,19 @@ export default function MatchesGrid({ matches, columns = 3, ...modeProps }: Matc
     });
   }, [matches, activeGroup, teamSearch]);
 
-  const grouped = useMemo(() => {
+  // All matches grouped — used in bet mode so hidden inputs stay in the DOM
+  const allGrouped = useMemo(() => {
+    const map = new Map<string, Match[]>();
+    for (const m of matches) {
+      const g = m.group_name ?? "Outros";
+      if (!map.has(g)) map.set(g, []);
+      map.get(g)!.push(m);
+    }
+    return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
+  }, [matches]);
+
+  // Filtered matches grouped — used in view mode (no form submission concern)
+  const filteredGrouped = useMemo(() => {
     const map = new Map<string, Match[]>();
     for (const m of filtered) {
       const g = m.group_name ?? "Outros";
@@ -57,6 +69,8 @@ export default function MatchesGrid({ matches, columns = 3, ...modeProps }: Matc
     }
     return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
   }, [filtered]);
+
+  const visibleIds = useMemo(() => new Set(filtered.map((m) => m.id)), [filtered]);
 
   const gridClass =
     columns === 3
@@ -123,22 +137,35 @@ export default function MatchesGrid({ matches, columns = 3, ...modeProps }: Matc
       </div>
 
       {/* Grouped sections */}
-      {grouped.length === 0 ? (
+      {filteredGrouped.length === 0 && modeProps.mode === "view" ? (
         <p className="text-center text-[var(--muted)] py-10">Nenhuma partida encontrada.</p>
       ) : (
         <div className="space-y-8">
-          {grouped.map(([group, groupMatches]) => (
-            <section key={group}>
-              <h2 className="text-xs font-black uppercase tracking-widest text-[var(--muted)] mb-3 px-1">
-                {group}
-              </h2>
-              <div className={gridClass}>
-                {groupMatches.map((match) => (
-                  <div key={match.id}>{renderMatch(match)}</div>
-                ))}
-              </div>
-            </section>
-          ))}
+          {(modeProps.mode === "bet" ? allGrouped : filteredGrouped).map(([group, groupMatches]) => {
+            // In bet mode: hide sections that have no visible matches, but keep inputs in DOM
+            const sectionVisible =
+              modeProps.mode !== "bet" ||
+              groupMatches.some((m) => visibleIds.has(m.id));
+
+            return (
+              <section key={group} hidden={!sectionVisible}>
+                <h2 className="text-xs font-black uppercase tracking-widest text-[var(--muted)] mb-3 px-1">
+                  {group}
+                </h2>
+                <div className={gridClass}>
+                  {groupMatches.map((match) => {
+                    const matchVisible =
+                      modeProps.mode !== "bet" || visibleIds.has(match.id);
+                    return (
+                      <div key={match.id} hidden={!matchVisible}>
+                        {renderMatch(match)}
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })}
         </div>
       )}
     </div>

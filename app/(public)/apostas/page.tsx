@@ -5,8 +5,8 @@ import { getMatchesForPhase } from "@/lib/data/matches";
 import { getUserPayment } from "@/lib/data/payments";
 import { getUserBetsForMatches } from "@/lib/data/bets";
 import MatchesGrid from "@/components/matches-grid";
+import BetsForm from "@/components/bets-form";
 import { DisplayNameModal } from "@/components/display-name-modal";
-import { submitBets } from "@/actions/bets";
 
 const GROUP_STAGE_PHASE_ID = "00000000-0000-0000-0000-000000000010";
 
@@ -71,28 +71,14 @@ export default async function ApostasPage() {
           </div>
         </div>
 
-        <form
-          action={async (fd) => {
-            "use server";
-            await submitBets(fd);
-          }}
-        >
+        <BetsForm existingBetsCount={existingBets.length}>
           <MatchesGrid
             matches={matches}
             columns={3}
             mode="bet"
             existingBetsByMatchId={betByMatchId}
           />
-
-          <div className="mt-8 flex justify-center">
-            <button
-              type="submit"
-              className="rounded-lg bg-[var(--accent)] px-8 py-4 font-bold text-black hover:bg-[var(--accent-hover)] transition-colors"
-            >
-              {existingBets.length > 0 ? "Atualizar Palpites" : "Enviar Palpites"}
-            </button>
-          </div>
-        </form>
+        </BetsForm>
 
         <p className="mt-4 text-center text-xs text-[var(--muted)]">
           Após enviar, você receberá a chave PIX para pagamento.
