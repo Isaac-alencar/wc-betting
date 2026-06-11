@@ -61,7 +61,14 @@ export async function signInAnonymously() {
   const { data, error } = await supabase.auth.signInAnonymously();
 
   if (error || !data.user) {
-    return { error: "Não foi possível entrar. Tente novamente." };
+    const isDisabled =
+      error?.code === "anonymous_provider_disabled" ||
+      error?.message?.toLowerCase().includes("anonymous");
+    return {
+      error: isDisabled
+        ? "Entrada sem cadastro está desativada. Use e-mail e senha."
+        : "Não foi possível entrar. Tente novamente.",
+    };
   }
 
   // Don't create profile yet — display name is captured before first bet
