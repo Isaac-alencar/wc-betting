@@ -4,9 +4,11 @@ import { getOpenPhase } from "@/lib/data/phases";
 import { getMatchesForPhase } from "@/lib/data/matches";
 import { getUserPayment } from "@/lib/data/payments";
 import { getUserBetsForMatches } from "@/lib/data/bets";
-import BetInput from "@/components/bet-input";
+import MatchesGrid from "@/components/matches-grid";
 import { DisplayNameModal } from "@/components/display-name-modal";
 import { submitBets } from "@/actions/bets";
+
+const GROUP_STAGE_PHASE_ID = "00000000-0000-0000-0000-000000000010";
 
 export default async function ApostasPage() {
   const supabase = await createClient();
@@ -16,7 +18,6 @@ export default async function ApostasPage() {
 
   if (!user) redirect("/login");
 
-  // Check display name
   const { data: profile } = await supabase
     .from("user_profiles")
     .select("display_name")
@@ -44,25 +45,30 @@ export default async function ApostasPage() {
     redirect("/");
   }
 
-  const matches = await getMatchesForPhase(phase.id);
+  const matches = await getMatchesForPhase(GROUP_STAGE_PHASE_ID);
   const existingBets = await getUserBetsForMatches(
     user.id,
     matches.map((m) => m.id)
   );
   const betByMatchId = Object.fromEntries(
-    existingBets.map((b) => [b.match_id, b])
+    existingBets.map((b) => [
+      b.match_id,
+      { home_goals_predicted: b.home_goals_predicted, away_goals_predicted: b.away_goals_predicted },
+    ])
   );
 
   return (
     <main className="min-h-screen bg-[var(--background)] px-4 py-10">
       {!profile && <DisplayNameModal />}
 
-      <div className="mx-auto max-w-lg">
-        <div className="mb-6">
-          <h1 className="text-2xl font-black text-[var(--accent)]">Seus Palpites</h1>
-          <p className="text-sm text-[var(--muted)]">
-            {phase.name} · R$ {Number(phase.pix_amount).toFixed(2).replace(".", ",")} via PIX
-          </p>
+      <div className="mx-auto max-w-5xl">
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-black text-[var(--accent)]">Seus Palpites</h1>
+            <p className="text-sm text-[var(--muted)]">
+              {phase.name} · R$ {Number(phase.pix_amount).toFixed(2).replace(".", ",")} via PIX
+            </p>
+          </div>
         </div>
 
         <form
@@ -70,22 +76,22 @@ export default async function ApostasPage() {
             "use server";
             await submitBets(fd);
           }}
-          className="space-y-4"
         >
-          {matches.map((match) => (
-            <BetInput
-              key={match.id}
-              match={match}
-              existingBet={betByMatchId[match.id] ?? null}
-            />
-          ))}
+          <MatchesGrid
+            matches={matches}
+            columns={3}
+            mode="bet"
+            existingBetsByMatchId={betByMatchId}
+          />
 
-          <button
-            type="submit"
-            className="w-full rounded-lg bg-[var(--accent)] px-4 py-4 font-bold text-black hover:bg-[var(--accent-hover)] transition-colors mt-2"
-          >
-            {existingBets.length > 0 ? "Atualizar Palpites" : "Enviar Palpites"}
-          </button>
+          <div className="mt-8 flex justify-center">
+            <button
+              type="submit"
+              className="rounded-lg bg-[var(--accent)] px-8 py-4 font-bold text-black hover:bg-[var(--accent-hover)] transition-colors"
+            >
+              {existingBets.length > 0 ? "Atualizar Palpites" : "Enviar Palpites"}
+            </button>
+          </div>
         </form>
 
         <p className="mt-4 text-center text-xs text-[var(--muted)]">

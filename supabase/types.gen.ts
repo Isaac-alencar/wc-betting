@@ -75,6 +75,7 @@ export type Database = {
           away_goals_final: number | null;
           status: "scheduled" | "finished" | "cancelled" | "postponed";
           external_id: string | null;
+          group_name: string | null;
           created_at: string;
         };
         Insert: {
@@ -87,6 +88,7 @@ export type Database = {
           away_goals_final?: number | null;
           status?: "scheduled" | "finished" | "cancelled" | "postponed";
           external_id?: string | null;
+          group_name?: string | null;
           created_at?: string;
         };
         Update: {
@@ -99,6 +101,7 @@ export type Database = {
           away_goals_final?: number | null;
           status?: "scheduled" | "finished" | "cancelled" | "postponed";
           external_id?: string | null;
+          group_name?: string | null;
           created_at?: string;
         };
         Relationships: [];

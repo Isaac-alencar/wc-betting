@@ -1,11 +1,16 @@
 "use client";
 
 import type { Match } from "@/lib/data/matches";
-import type { Bet } from "@/lib/data/bets";
+import { getFlag } from "@/lib/flags";
+
+interface ExistingBet {
+  home_goals_predicted: number;
+  away_goals_predicted: number;
+}
 
 interface BetInputProps {
   match: Match;
-  existingBet?: Bet | null;
+  existingBet?: ExistingBet | null;
 }
 
 export default function BetInput({ match, existingBet }: BetInputProps) {
@@ -24,6 +29,7 @@ export default function BetInput({ match, existingBet }: BetInputProps) {
       <div className="flex items-center gap-3">
         {/* Home team */}
         <div className="flex-1 flex flex-col items-center gap-2">
+          <span className="text-2xl">{getFlag(match.home_team)}</span>
           <span className="text-sm font-bold text-[var(--foreground)] text-center leading-tight">
             {match.home_team}
           </span>
@@ -43,6 +49,7 @@ export default function BetInput({ match, existingBet }: BetInputProps) {
 
         {/* Away team */}
         <div className="flex-1 flex flex-col items-center gap-2">
+          <span className="text-2xl">{getFlag(match.away_team)}</span>
           <span className="text-sm font-bold text-[var(--foreground)] text-center leading-tight">
             {match.away_team}
           </span>

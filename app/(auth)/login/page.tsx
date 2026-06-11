@@ -9,6 +9,7 @@ type Mode = "login" | "signup";
 export default function LoginPage() {
   const [mode, setMode] = useState<Mode>("login");
   const [error, setError] = useState<string | null>(null);
+  const [emailSent, setEmailSent] = useState(false);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
@@ -21,6 +22,7 @@ export default function LoginPage() {
       const action = mode === "login" ? signInWithEmail : signUpWithEmail;
       const result = await action(formData);
       if (result?.error) setError(result.error);
+      if (result && "emailSent" in result && result.emailSent) setEmailSent(true);
     });
   }
 
@@ -49,6 +51,22 @@ export default function LoginPage() {
         </div>
 
         <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-xl">
+          {emailSent ? (
+            <div className="text-center py-4 space-y-3">
+              <p className="text-2xl">📬</p>
+              <p className="font-semibold text-[var(--foreground)]">Confirme seu e-mail</p>
+              <p className="text-sm text-[var(--muted)]">
+                Enviamos um link de confirmação para o seu e-mail. Clique nele para ativar sua conta e entrar.
+              </p>
+              <button
+                onClick={() => { setEmailSent(false); setMode("login"); }}
+                className="text-sm text-[var(--accent)] hover:underline"
+              >
+                Já confirmei — ir para login
+              </button>
+            </div>
+          ) : (
+          <>
           {/* Mode tabs */}
           <div className="flex rounded-lg bg-[var(--background)] p-1 mb-6">
             {(["login", "signup"] as Mode[]).map((m) => (
@@ -116,6 +134,8 @@ export default function LoginPage() {
           <p className="mt-3 text-center text-xs text-[var(--muted)]">
             Entrar sem cadastro vincula a conta ao seu navegador.
           </p>
+          </>
+          )}
         </div>
       </div>
     </main>

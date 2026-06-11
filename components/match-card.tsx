@@ -1,4 +1,5 @@
 import type { Match } from "@/lib/data/matches";
+import { getFlag } from "@/lib/flags";
 
 const STATUS_LABEL: Record<Match["status"], string> = {
   scheduled: "Programado",
@@ -29,9 +30,12 @@ export default function MatchCard({ match, bet }: MatchCardProps) {
     <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
       {/* Teams row */}
       <div className="flex items-center justify-between gap-4">
-        <span className="flex-1 text-right text-lg font-bold text-[var(--foreground)] truncate">
-          {match.home_team}
-        </span>
+        <div className="flex-1 flex flex-col items-end gap-0.5">
+          <span className="text-2xl">{getFlag(match.home_team)}</span>
+          <span className="text-sm font-bold text-[var(--foreground)] truncate text-right">
+            {match.home_team}
+          </span>
+        </div>
 
         <div className="flex flex-col items-center gap-1 shrink-0">
           {isFinished ? (
@@ -54,9 +58,12 @@ export default function MatchCard({ match, bet }: MatchCardProps) {
           </span>
         </div>
 
-        <span className="flex-1 text-left text-lg font-bold text-[var(--foreground)] truncate">
-          {match.away_team}
-        </span>
+        <div className="flex-1 flex flex-col items-start gap-0.5">
+          <span className="text-2xl">{getFlag(match.away_team)}</span>
+          <span className="text-sm font-bold text-[var(--foreground)] truncate">
+            {match.away_team}
+          </span>
+        </div>
       </div>
 
       {/* Kickoff time */}

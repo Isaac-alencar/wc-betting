@@ -43,15 +43,17 @@ export async function signUpWithEmail(formData: FormData) {
     return { error: error.message };
   }
 
-  if (data.user) {
+  if (data.user && data.session) {
     const displayName = email.split("@")[0];
     await supabase.from("user_profiles").upsert(
       { id: data.user.id, display_name: displayName },
       { onConflict: "id", ignoreDuplicates: true }
     );
+    redirect("/");
   }
 
-  redirect("/");
+  // Email confirmation required — don't redirect yet
+  return { emailSent: true };
 }
 
 export async function signInAnonymously() {
