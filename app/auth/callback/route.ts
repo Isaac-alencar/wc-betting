@@ -31,9 +31,11 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
+      const base = process.env.NEXT_PUBLIC_SITE_URL ?? origin;
+      return NextResponse.redirect(`${base}${next}`);
     }
   }
 
-  return NextResponse.redirect(`${origin}/login?error=confirmation_failed`);
+  const base = process.env.NEXT_PUBLIC_SITE_URL ?? origin;
+  return NextResponse.redirect(`${base}/login?error=confirmation_failed`);
 }
