@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { calculatePoints } from "@/lib/scoring";
+import { scoreMatchBets } from "@/lib/scoring-job";
 import { revalidatePath } from "next/cache";
 
 async function assertAdmin() {
@@ -43,34 +43,13 @@ export async function triggerScoring(matchId: string) {
     return { error: "Resultado da partida não registrado." };
   }
 
-  const actual = {
-    home: match.home_goals_final,
-    away: match.away_goals_final,
-  };
-
-  const { data: bets } = await admin
-    .from("bets")
-    .select("id, home_goals_predicted, away_goals_predicted")
-    .eq("match_id", matchId)
-    .eq("status", "confirmed");
-
-  if (!bets || bets.length === 0) {
-    return { success: true, scored: 0 };
-  }
-
-  for (const bet of bets) {
-    const points = calculatePoints(
-      { home: bet.home_goals_predicted, away: bet.away_goals_predicted },
-      actual
-    );
-
-    await admin
-      .from("bets")
-      .update({ status: "scored", points })
-      .eq("id", bet.id);
-  }
+  const scored = await scoreMatchBets(
+    matchId,
+    match.home_goals_final,
+    match.away_goals_final
+  );
 
   revalidatePath("/admin/pontuacao");
   revalidatePath("/ranking");
-  return { success: true, scored: bets.length };
+  return { success: true, scored };
 }

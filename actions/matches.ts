@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { scoreMatchBets } from "@/lib/scoring-job";
 import { revalidatePath } from "next/cache";
 
 async function assertAdmin() {
@@ -61,7 +62,11 @@ export async function enterResult(
 
   if (error) return { error: `Erro ao salvar resultado: ${error.message}` };
 
+  await scoreMatchBets(matchId, homeGoals, awayGoals);
+
   revalidatePath("/admin/resultados");
+  revalidatePath("/admin/pontuacao");
+  revalidatePath("/ranking");
   revalidatePath("/");
   return { success: true };
 }

@@ -17,6 +17,42 @@ interface ApiMatch {
   awayTeam: { name: string };
 }
 
+export interface FinishedMatch {
+  externalId: string;
+  homeTeam: string;
+  awayTeam: string;
+  homeGoals: number;
+  awayGoals: number;
+}
+
+interface ApiMatchWithScore extends ApiMatch {
+  score: { fullTime: { home: number | null; away: number | null } };
+}
+
+export async function fetchFinishedWCMatches(): Promise<FinishedMatch[]> {
+  const apiKey = process.env.FOOTBALL_DATA_API_KEY;
+  if (!apiKey) throw new Error("FOOTBALL_DATA_API_KEY not set.");
+
+  const res = await fetch(
+    `${BASE}/competitions/${WC_COMPETITION}/matches?season=2026&status=FINISHED`,
+    { headers: { "X-Auth-Token": apiKey }, next: { revalidate: 0 } }
+  );
+
+  if (!res.ok) throw new Error(`football-data.org API error: ${res.status} ${res.statusText}`);
+
+  const { matches } = (await res.json()) as { matches: ApiMatchWithScore[] };
+
+  return matches
+    .filter((m) => m.score.fullTime.home != null && m.score.fullTime.away != null)
+    .map((m) => ({
+      externalId: String(m.id),
+      homeTeam: m.homeTeam.name,
+      awayTeam: m.awayTeam.name,
+      homeGoals: m.score.fullTime.home as number,
+      awayGoals: m.score.fullTime.away as number,
+    }));
+}
+
 export async function fetchBrazilNextMatch(): Promise<MatchResult | null> {
   const apiKey = process.env.FOOTBALL_DATA_API_KEY;
   if (!apiKey) throw new Error("FOOTBALL_DATA_API_KEY not set.");

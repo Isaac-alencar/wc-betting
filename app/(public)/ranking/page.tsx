@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import RankingTable from "@/components/ranking-table";
 
 export const revalidate = 60;
@@ -6,66 +6,68 @@ export const revalidate = 60;
 const PRIZE_SPLITS = [0.6, 0.3, 0.1];
 
 async function getRankingData() {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
-  // Confirmed participants with their scored bets aggregated
-  const { data: profiles } = await supabase
-    .from("user_profiles")
-    .select(
-      `
-      id,
-      display_name,
-      payments!inner(phase_id, status),
-      bets(status, points, created_at)
-      `
-    )
-    .eq("payments.status", "confirmed");
-
-  type ProfileRow = {
-    id: string;
-    display_name: string;
-    payments: { phase_id: string; status: string }[];
-    bets: { status: string; points: number | null; created_at: string }[];
-  };
-  const typedProfiles = profiles as unknown as ProfileRow[];
-
-  if (!typedProfiles || typedProfiles.length === 0) return { entries: [], totalPot: 0 };
-
-  // Get confirmed payment amounts (phases.pix_amount × confirmed participants per phase)
+  // 1. Confirmed payments + phase amounts in one query
   const { data: confirmedPayments } = await supabase
     .from("payments")
-    .select("phase_id, phases(pix_amount)")
+    .select("user_id, phase_id")
     .eq("status", "confirmed");
 
-  type PaymentWithPhase = { phase_id: string; phases: { pix_amount: number } | null };
-  const totalPot =
-    (confirmedPayments as unknown as PaymentWithPhase[])?.reduce(
-      (sum, p) => sum + Number(p.phases?.pix_amount ?? 0),
-      0
-    ) ?? 0;
+  if (!confirmedPayments || confirmedPayments.length === 0) return { entries: [], totalPot: 0 };
 
-  const entries = typedProfiles
-    .map((p) => {
-      const scoredBets = p.bets.filter((b) => b.status === "scored");
+  const confirmedUserIds = [...new Set(confirmedPayments.map((p) => p.user_id))];
+  const confirmedPhaseIds = [...new Set(confirmedPayments.map((p) => p.phase_id))];
+
+  // 2. Phase amounts for prize pot
+  const { data: phases } = await supabase
+    .from("phases")
+    .select("id, pix_amount")
+    .in("id", confirmedPhaseIds);
+
+  const phaseAmount = Object.fromEntries(
+    (phases ?? []).map((ph) => [ph.id, Number(ph.pix_amount)])
+  );
+  const totalPot = confirmedPayments.reduce(
+    (sum, p) => sum + (phaseAmount[p.phase_id] ?? 0),
+    0
+  );
+
+  // 3. Display names
+  const { data: profiles } = await supabase
+    .from("user_profiles")
+    .select("id, display_name")
+    .in("id", confirmedUserIds);
+
+  if (!profiles || profiles.length === 0) return { entries: [], totalPot: 0 };
+
+  // 4. All bets for confirmed users
+  const { data: bets } = await supabase
+    .from("bets")
+    .select("user_id, status, points, created_at")
+    .in("user_id", confirmedUserIds);
+
+  const betsByUser: Record<string, typeof bets> = {};
+  for (const bet of bets ?? []) {
+    (betsByUser[bet.user_id] ??= []).push(bet);
+  }
+
+  const entries = profiles
+    .map((profile) => {
+      const userBets = betsByUser[profile.id] ?? [];
+      const scoredBets = userBets.filter((b) => b.status === "scored");
       const totalPoints = scoredBets.reduce((s, b) => s + (b.points ?? 0), 0);
       const exactScores = scoredBets.filter((b) => b.points === 5).length;
 
-      // First confirmed/scored bet timestamp for tie-breaking
-      const confirmedBets = p.bets.filter(
+      const activeBets = userBets.filter(
         (b) => b.status === "confirmed" || b.status === "scored"
       );
       const firstBetAt =
-        confirmedBets.length > 0
-          ? Math.min(...confirmedBets.map((b) => new Date(b.created_at).getTime()))
+        activeBets.length > 0
+          ? Math.min(...activeBets.map((b) => new Date(b.created_at).getTime()))
           : Infinity;
 
-      return {
-        id: p.id,
-        display_name: p.display_name,
-        total_points: totalPoints,
-        exact_scores: exactScores,
-        first_bet_at: firstBetAt,
-      };
+      return { id: profile.id, display_name: profile.display_name, total_points: totalPoints, exact_scores: exactScores, first_bet_at: firstBetAt };
     })
     .sort((a, b) => {
       if (b.total_points !== a.total_points) return b.total_points - a.total_points;
