@@ -35,11 +35,17 @@ export async function submitBets(
     return { error: "Seus palpites já estão confirmados e travados." };
   }
 
-  // Get matches for the phase
-  const { data: matches } = await supabase
-    .from("matches")
-    .select("id")
-    .eq("phase_id", phase.id);
+  // Get matches for the phase, along with any locked bets so we can skip them
+  const [{ data: matches }, { data: lockedBets }] = await Promise.all([
+    supabase.from("matches").select("id").eq("phase_id", phase.id),
+    supabase
+      .from("bets")
+      .select("match_id")
+      .eq("user_id", user.id)
+      .in("status", ["confirmed", "scored"]),
+  ]);
+
+  const lockedMatchIds = new Set((lockedBets ?? []).map((b) => b.match_id));
 
   if (!matches || matches.length === 0) {
     return { error: "Nenhuma partida encontrada nesta fase." };
@@ -51,10 +57,11 @@ export async function submitBets(
     match_id: string;
     home_goals_predicted: number;
     away_goals_predicted: number;
-    status: "pending";
   }[] = [];
 
   for (const match of matches) {
+    if (lockedMatchIds.has(match.id)) continue;
+
     const homeRaw = formData.get(`home_${match.id}`);
     const awayRaw = formData.get(`away_${match.id}`);
 
@@ -73,7 +80,6 @@ export async function submitBets(
       match_id: match.id,
       home_goals_predicted: home,
       away_goals_predicted: away,
-      status: "pending",
     });
   }
 
