@@ -57,7 +57,7 @@ export async function fetchBrazilNextMatch(): Promise<MatchResult | null> {
   const apiKey = process.env.FOOTBALL_DATA_API_KEY;
   if (!apiKey) throw new Error("FOOTBALL_DATA_API_KEY not set.");
 
-  const url = `${BASE}/competitions/${WC_COMPETITION}/matches?season=2026&status=SCHEDULED`;
+  const url = `${BASE}/competitions/${WC_COMPETITION}/matches?season=2026&status=SCHEDULED,TIMED`;
   const res = await fetch(url, {
     headers: { "X-Auth-Token": apiKey },
     next: { revalidate: 0 },
@@ -69,14 +69,17 @@ export async function fetchBrazilNextMatch(): Promise<MatchResult | null> {
 
   const json = (await res.json()) as { matches: ApiMatch[] };
 
-  const brazilMatch = json.matches.find(
-    (m) =>
-      m.status === "SCHEDULED" &&
-      (m.homeTeam.name.toLowerCase().includes("brazil") ||
-        m.awayTeam.name.toLowerCase().includes("brazil") ||
-        m.homeTeam.name.toLowerCase().includes("brasil") ||
-        m.awayTeam.name.toLowerCase().includes("brasil"))
-  );
+  const brazilMatch = json.matches
+    .slice()
+    .sort((a, b) => a.utcDate.localeCompare(b.utcDate))
+    .find(
+      (m) =>
+        (m.status === "SCHEDULED" || m.status === "TIMED") &&
+        (m.homeTeam.name.toLowerCase().includes("brazil") ||
+          m.awayTeam.name.toLowerCase().includes("brazil") ||
+          m.homeTeam.name.toLowerCase().includes("brasil") ||
+          m.awayTeam.name.toLowerCase().includes("brasil"))
+    );
 
   if (!brazilMatch) return null;
 
