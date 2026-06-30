@@ -117,12 +117,27 @@ export async function fetchAllMatchesForPhase(phaseId: string) {
   for (const match of matches) {
     const { data: existing } = await admin
       .from("matches")
-      .select("id")
+      .select("id, phase_id")
       .eq("external_id", match.externalId)
       .maybeSingle();
 
     if (existing) {
-      skipped++;
+      if (existing.phase_id === phaseId) {
+        // Already in the right phase
+        skipped++;
+      } else {
+        // Exists but in a different phase — move it here
+        const { error } = await admin
+          .from("matches")
+          .update({
+            phase_id: phaseId,
+            home_team: match.homeTeam,
+            away_team: match.awayTeam,
+            kickoff_at: match.kickoffAt,
+          })
+          .eq("id", existing.id);
+        if (!error) imported++;
+      }
       continue;
     }
 
