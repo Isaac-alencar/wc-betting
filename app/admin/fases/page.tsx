@@ -1,6 +1,5 @@
 import { getAllPhases } from "@/lib/data/phases";
 import { createPhase, updatePhaseStatus } from "@/actions/phases";
-import { fetchNextBrazilMatch } from "@/actions/matches";
 import FetchMatchButton from "@/components/admin/fetch-match-button";
 
 const STATUS_LABEL: Record<string, string> = {

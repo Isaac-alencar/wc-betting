@@ -8,8 +8,6 @@ import MatchesGrid from "@/components/matches-grid";
 import BetsForm from "@/components/bets-form";
 import { DisplayNameModal } from "@/components/display-name-modal";
 
-const GROUP_STAGE_PHASE_ID = "00000000-0000-0000-0000-000000000010";
-
 export default async function ApostasPage() {
   const supabase = await createClient();
   const {
@@ -45,7 +43,7 @@ export default async function ApostasPage() {
     redirect("/");
   }
 
-  const matches = await getMatchesForPhase(GROUP_STAGE_PHASE_ID);
+  const matches = await getMatchesForPhase(phase.id);
   const existingBets = await getUserBetsForMatches(
     user.id,
     matches.map((m) => m.id)
