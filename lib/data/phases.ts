@@ -9,8 +9,9 @@ export async function getOpenPhase(): Promise<Phase | null> {
     .from("phases")
     .select("*")
     .eq("status", "open")
-    .maybeSingle();
-  return data;
+    .order("created_at", { ascending: false })
+    .limit(1);
+  return data?.[0] ?? null;
 }
 
 export async function getAllPhases(): Promise<Phase[]> {
