@@ -12,6 +12,7 @@ interface MatchResult {
 interface ApiMatch {
   id: number;
   status: string;
+  stage: string;
   utcDate: string;
   homeTeam: { name: string | null };
   awayTeam: { name: string | null };
@@ -102,8 +103,9 @@ export async function fetchMatchesByStage(stageCode: string): Promise<MatchResul
   const apiKey = process.env.FOOTBALL_DATA_API_KEY;
   if (!apiKey) throw new Error("FOOTBALL_DATA_API_KEY not set.");
 
+  // The API does not support ?stage= as a filter — fetch all and filter in-process
   const res = await fetch(
-    `${BASE}/competitions/${WC_COMPETITION}/matches?season=2026&stage=${stageCode}`,
+    `${BASE}/competitions/${WC_COMPETITION}/matches?season=2026`,
     { headers: { "X-Auth-Token": apiKey }, next: { revalidate: 0 } }
   );
 
@@ -114,8 +116,11 @@ export async function fetchMatchesByStage(stageCode: string): Promise<MatchResul
   const { matches } = (await res.json()) as { matches: ApiMatch[] };
 
   return matches
-    .filter((m): m is ApiMatch & { homeTeam: { name: string }; awayTeam: { name: string } } =>
-      m.homeTeam.name != null && m.awayTeam.name != null
+    .filter(
+      (m): m is ApiMatch & { homeTeam: { name: string }; awayTeam: { name: string } } =>
+        m.stage === stageCode &&
+        m.homeTeam.name != null &&
+        m.awayTeam.name != null
     )
     .sort((a, b) => a.utcDate.localeCompare(b.utcDate))
     .map((m) => ({
